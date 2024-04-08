@@ -1,0 +1,8 @@
+# gordalina/cachetool configuration
+# https://github.com/gordalina/cachetool
+
+adapter: web
+webClient: SymfonyHttpClient # defaults to FileGetContents
+webUrl: https://sw-sfc.sfc.localhost/tmp
+webPath: /home/web/sfc/sfc/services_web/tmp
+# webBasicAuth: user:password

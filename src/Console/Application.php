@@ -11,43 +11,55 @@
 
 namespace CacheTool\Console;
 
+use CacheTool\Adapter\AbstractAdapter;
 use CacheTool\Adapter\FastCGI;
 use CacheTool\Adapter\Cli;
 use CacheTool\Adapter\Http\FileGetContents;
+use CacheTool\Adapter\Http\HttpInterface;
 use CacheTool\Adapter\Http\SymfonyHttpClient;
 use CacheTool\Adapter\Web;
 use CacheTool\CacheTool;
-use CacheTool\Command as CacheToolCommand;
+use CacheTool\Command\AbstractCommand;
+use CacheTool\Command\ApcuCacheClearCommand;
+use CacheTool\Command\ApcuCacheInfoCommand;
+use CacheTool\Command\ApcuCacheInfoKeysCommand;
+use CacheTool\Command\ApcuKeyDeleteCommand;
+use CacheTool\Command\ApcuKeyExistsCommand;
+use CacheTool\Command\ApcuKeyFetchCommand;
+use CacheTool\Command\ApcuKeyStoreCommand;
+use CacheTool\Command\ApcuRegexpDeleteCommand;
+use CacheTool\Command\ApcuSmaInfoCommand;
+use CacheTool\Command\OpcacheCompileScriptCommand;
+use CacheTool\Command\OpcacheCompileScriptsCommand;
+use CacheTool\Command\OpcacheConfigurationCommand;
+use CacheTool\Command\OpcacheInvalidateScriptsCommand;
+use CacheTool\Command\OpcacheResetCommand;
+use CacheTool\Command\OpcacheResetFileCacheCommand;
+use CacheTool\Command\OpcacheStatusCommand;
+use CacheTool\Command\OpcacheStatusScriptsCommand;
+use CacheTool\Command\PhpEvalCommand;
+use CacheTool\Command\StatCacheClearCommand;
+use CacheTool\Command\StatRealpathGetCommand;
+use CacheTool\Command\StatRealpathSizeCommand;
 use CacheTool\Monolog\ConsoleHandler;
 use Monolog\Logger;
-use SelfUpdate\SelfUpdateCommand;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Application extends BaseApplication
 {
-    const VERSION = '@package_version@';
+    private const VERSION = '@package_version@';
 
-    /**
-     * @var Config
-     */
-    protected $config;
+    protected Config $config;
 
-    /**
-     * @var Logger
-     */
-    protected $logger;
+    protected Logger $logger;
 
-    /**
-     * @param Config $config
-     */
     public function __construct(Config $config)
     {
         parent::__construct('CacheTool', self::VERSION);
@@ -58,43 +70,40 @@ class Application extends BaseApplication
 
     /**
      * {@inheritdoc}
+     * 
+     * @return Command[]
      */
     protected function getDefaultCommands(): array
     {
         $commands = parent::getDefaultCommands();
-        $commands[] = new SelfUpdateCommand(
-            'gordalina/cachetool',
-            '@package_version@',
-            'gordalina/cachetool'
-        );
 
         if (in_array('apcu', $this->config['extensions'], true)) {
-            $commands[] = new CacheToolCommand\ApcuCacheClearCommand();
-            $commands[] = new CacheToolCommand\ApcuCacheInfoCommand();
-            $commands[] = new CacheToolCommand\ApcuCacheInfoKeysCommand();
-            $commands[] = new CacheToolCommand\ApcuKeyDeleteCommand();
-            $commands[] = new CacheToolCommand\ApcuKeyExistsCommand();
-            $commands[] = new CacheToolCommand\ApcuKeyFetchCommand();
-            $commands[] = new CacheToolCommand\ApcuKeyStoreCommand();
-            $commands[] = new CacheToolCommand\ApcuSmaInfoCommand();
-            $commands[] = new CacheToolCommand\ApcuRegexpDeleteCommand();
+            $commands[] = new ApcuCacheClearCommand();
+            $commands[] = new ApcuCacheInfoCommand();
+            $commands[] = new ApcuCacheInfoKeysCommand();
+            $commands[] = new ApcuKeyDeleteCommand();
+            $commands[] = new ApcuKeyExistsCommand();
+            $commands[] = new ApcuKeyFetchCommand();
+            $commands[] = new ApcuKeyStoreCommand();
+            $commands[] = new ApcuSmaInfoCommand();
+            $commands[] = new ApcuRegexpDeleteCommand();
         }
 
         if (in_array('opcache', $this->config['extensions'], true)) {
-            $commands[] = new CacheToolCommand\OpcacheConfigurationCommand();
-            $commands[] = new CacheToolCommand\OpcacheResetCommand();
-            $commands[] = new CacheToolCommand\OpcacheResetFileCacheCommand();
-            $commands[] = new CacheToolCommand\OpcacheStatusCommand();
-            $commands[] = new CacheToolCommand\OpcacheStatusScriptsCommand();
-            $commands[] = new CacheToolCommand\OpcacheInvalidateScriptsCommand();
-            $commands[] = new CacheToolCommand\OpcacheCompileScriptsCommand();
-            $commands[] = new CacheToolCommand\OpcacheCompileScriptCommand();
+            $commands[] = new OpcacheConfigurationCommand();
+            $commands[] = new OpcacheResetCommand();
+            $commands[] = new OpcacheResetFileCacheCommand();
+            $commands[] = new OpcacheStatusCommand();
+            $commands[] = new OpcacheStatusScriptsCommand();
+            $commands[] = new OpcacheInvalidateScriptsCommand();
+            $commands[] = new OpcacheCompileScriptsCommand();
+            $commands[] = new OpcacheCompileScriptCommand();
         }
 
-        $commands[] = new CacheToolCommand\PhpEvalCommand();
-        $commands[] = new CacheToolCommand\StatCacheClearCommand();
-        $commands[] = new CacheToolCommand\StatRealpathGetCommand();
-        $commands[] = new CacheToolCommand\StatRealpathSizeCommand();
+        $commands[] = new PhpEvalCommand();
+        $commands[] = new StatCacheClearCommand();
+        $commands[] = new StatRealpathGetCommand();
+        $commands[] = new StatRealpathSizeCommand();
 
         return $commands;
     }
@@ -122,7 +131,7 @@ class Application extends BaseApplication
     /**
      * {@inheritDoc}
      */
-    public function doRun(InputInterface $input, OutputInterface $output)
+    public function doRun(InputInterface $input, OutputInterface $output): int
     {
         $handler = new ConsoleHandler();
         $handler->setOutput($output);
@@ -138,9 +147,9 @@ class Application extends BaseApplication
     /**
      * {@inheritDoc}
      */
-    public function doRunCommand(Command $command, InputInterface $input, OutputInterface $output)
+    public function doRunCommand(Command $command, InputInterface $input, OutputInterface $output): int
     {
-        if ($command instanceof ContainerAwareInterface) {
+        if ($command instanceof AbstractCommand) {
             $container = $this->buildContainer($input);
             $command->setContainer($container);
         }
@@ -148,11 +157,7 @@ class Application extends BaseApplication
         return parent::doRunCommand($command, $input, $output);
     }
 
-    /**
-     * @param  InputInterface     $input
-     * @return ContainerInterface
-     */
-    public function buildContainer(InputInterface $input)
+    public function buildContainer(InputInterface $input): ContainerInterface
     {
         $this->parseConfiguration($input);
 
@@ -172,10 +177,7 @@ class Application extends BaseApplication
         return $container;
     }
 
-    /**
-     * @param  InputInterface $input
-     */
-    private function parseConfiguration(InputInterface $input)
+    private function parseConfiguration(InputInterface $input): void
     {
         if ($input->getOption('config')) {
             $path = $input->getOption('config');
@@ -213,10 +215,7 @@ class Application extends BaseApplication
         $this->config['temp_dir'] = $input->getOption('tmp-dir') ?? $this->config['temp_dir'];
     }
 
-    /**
-     * @return \CacheTool\Adapter\HttpInterface
-     */
-    private function buildHttpClient()
+    private function buildHttpClient(): HttpInterface
     {
         if ($this->config['webClient'] == 'SymfonyHttpClient') {
             $options = [
@@ -249,10 +248,7 @@ class Application extends BaseApplication
         return new FileGetContents($this->config['webUrl']);
     }
 
-    /**
-     * @return null|\CacheTool\Adapter\AbstractAdapter
-     */
-    private function getAdapter()
+    private function getAdapter(): AbstractAdapter
     {
         switch ($this->config['adapter']) {
             case 'cli':

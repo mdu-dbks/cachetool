@@ -10,21 +10,22 @@
         "fpm"
     ],
     "require": {
+        "php": ">=8.2.0",
+        "ext-dom": "*",
+        "ext-xml": "*",
         "hollodotme/fast-cgi-client": "^3.0",
         "monolog/monolog": "^3.0",
-        "php": ">=8.1.0",
         "psr/log": "^2.0 || ^3.0",
-        "symfony/console": "^6.0",
-        "symfony/dependency-injection": "^6.0",
-        "symfony/finder": "^6.0",
-        "symfony/process": "^6.0",
-        "symfony/yaml": "^6.0",
-        "symfony/http-client": "^6.0",
-        "symfony/http-foundation": "^6.0",
-        "consolidation/self-update": "~2.1.0"
+        "symfony/console": "^7.0",
+        "symfony/dependency-injection": "^7.0",
+        "symfony/finder": "^7.0",
+        "symfony/process": "^7.0",
+        "symfony/yaml": "^7.0",
+        "symfony/http-client": "^7.0",
+        "symfony/http-foundation": "^7.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.0"
+        "phpunit/phpunit": "^9.6.19"
     },
     "license": "MIT",
     "authors": [
